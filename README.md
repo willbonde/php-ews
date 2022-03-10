@@ -41,10 +41,10 @@ object:
 ```php
 use \jamesiarmes\PhpEws\Client;
 
-$ews = new Client($server, $username, $password, $version);
+$ews = new Client($server, $username, $password, $version, $client_certificate);
 ```
 
-The `Client` class takes four parameters for its constructor:
+The `Client` class takes five parameters for its constructor:
 
 * `$server`: The url to the exchange server you wish to connect to, without
   the protocol. Example: mail.example.com. If you have trouble determining the
@@ -56,6 +56,8 @@ The `Client` class takes four parameters for its constructor:
 * `$version` (optional): The version of the Exchange sever to connect to. Valid
   values can be found at `\jamesiarmes\PhpEws\Client::VERSION_*`. Defaults to
   Exchange 2007.
+* `$client_certicaticate` (optional): The path to the client certificate to use
+  for authentication. When specified, `$username` and `$password` are ignored.
 
 Once you have your `\jamesiarmes\PhpEws\Client` object, you need to build your
 request object. The type of object depends on the operation you are calling. If

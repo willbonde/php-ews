@@ -153,6 +153,11 @@ class Client
     protected $version;
 
     /**
+     * @var ?string Path to client certificate
+     */
+    protected $client_certificate;
+
+    /**
      * Constructor for the ExchangeWebServices class
      *
      * @param string $server
@@ -165,7 +170,8 @@ class Client
         $server = null,
         $username = null,
         $password = null,
-        $version = self::VERSION_2013
+        $version = self::VERSION_2013,
+        $client_certificate = null
     ) {
         // Set the object properties.
         $this->setServer($server);
@@ -187,6 +193,16 @@ class Client
         }
 
         return $this->soap;
+    }
+
+    /**
+     * Gets the client certificate path (or null if not set)
+     *
+     * @return string|null
+     */
+    public function getClientCertificate()
+    {
+        return $this->client_certificate;
     }
 
     /**
@@ -278,6 +294,22 @@ class Client
 
         // We need to re-build the SOAP headers.
         $this->headers = array();
+    }
+
+    /**
+     * Sets the client certificate. Should be a readable path to a certificate file
+     *
+     * @param string $client_certificate
+     *
+     * @throws \InvalidArgumentException  If the certificate is not readable
+     */
+    public function setClientCertificate($client_certificate)
+    {
+        if (!is_readable($client_certificate)) {
+            throw new \InvalidArgumentException('Client certificate not readable');
+        }
+
+        $this->client_certificate = $client_certificate;
     }
 
     /**
@@ -1604,16 +1636,25 @@ class Client
      */
     protected function initializeSoapClient()
     {
+        $options = array(
+                         'location' => 'https://' . $this->server . '/EWS/Exchange.asmx',
+                         'classmap' => $this->classMap(),
+                         'curlopts' => $this->curl_options,
+                         'features' => SOAP_SINGLE_ELEMENT_ARRAYS
+        );
+
+        //If client certificate is set, add it to the options for usage
+        //Else, default to login/password
+        if ($this->client_certificate !== null) {
+            $options['local_cert'] = $this->client_certificate;
+        } else {
+            $options['user'] = $this->username;
+            $options['password'] = $this->password;
+        }
+
         $this->soap = new SoapClient(
             dirname(__FILE__) . '/assets/services.wsdl',
-            array(
-                'user' => $this->username,
-                'password' => $this->password,
-                'location' => 'https://' . $this->server . '/EWS/Exchange.asmx',
-                'classmap' => $this->classMap(),
-                'curlopts' => $this->curl_options,
-                'features' => SOAP_SINGLE_ELEMENT_ARRAYS,
-            )
+            $options
         );
 
         return $this->soap;
